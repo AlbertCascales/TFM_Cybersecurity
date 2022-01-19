@@ -9,8 +9,8 @@ import time
 from selenium.webdriver.common.by import By
 from itertools import islice
 
-URL_BASE = "https://play.google.com/store/apps/details?id="
-URL_PACKAGE = "com.gf.flyingmotorbike.policebike.robotshooting&hl=en&gl=US&showAllReviews=true"
+URL_BASE = "https://appgallery.huawei.com/app/"
+URL_PACKAGE = "C100315379"
 URL_TOTAL = URL_BASE + URL_PACKAGE
 MAX_PAGES = 30
 counter_post = 0
@@ -24,9 +24,19 @@ req = cm.request(URL_TOTAL)
 status_code = req.code if req != '' else -1
 if status_code == 200:
 
-    DRIVER_PATH = '/home/linux/Descargas/chromedriver_linux64/chromedriver'
+    DRIVER_PATH = '/home/alberto/Descargas/chromedriver'
     driver = webdriver.Chrome(executable_path=DRIVER_PATH)
     driver.get(req.url)
+
+    #Wait to load page
+    time.sleep(1)
+
+    #Press "View All" button
+    #Press "Show more reviews" button
+    try:
+        driver.find_element_by_css_selector('.more').click()
+    except NoSuchElementException:
+        print("No existe el boton: View all")
 
     #Get scroll height
     last_height = driver.execute_script("return document.body.scrollHeight")
@@ -42,38 +52,43 @@ if status_code == 200:
             break
         #Update new scroll height
         last_height=new_height
-        #Press "Show more reviews" button
-        try:
-            driver.find_element_by_css_selector('.RveJvd.snByac').click()
-        except NoSuchElementException:
-            print("No existe")
+
+        
+        
 
     #Get reviews of users
-    reviews = driver.find_elements_by_xpath('//div[@jsname="fk8dgd"]/div')
+    reviews = driver.find_elements_by_xpath('//div[@class="listContainer"]/div')
+    #print(reviews)
 
-    for review in reviews:
+
+
+    for review in reviews[:-1]:
+        #print(review.text)
         #Get name of user
-        name_user=review.find_element_by_xpath('.//span[@class="X43Kjb"]').text
+        name_user=review.find_element_by_xpath('.//div[@class="userName"]').text
         #Get date of review
-        date=review.find_element_by_xpath('.//span[@class="p2TkOb"]').text
+        date=review.find_element_by_xpath('.//div[@class="deviceName"]').text
         #Get description
-        description=review.find_element_by_xpath('.//span[@jsname="bN97Pc"]').text
+        description=review.find_element_by_xpath('.//div[@class="part_middle"]').text
         #Get number of stars of review
-        starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Rated")]')
-        numStars = int(starts_element.get_attribute('aria-label').split()[1])
+        #starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Rated")]')
+        #numStars = int(starts_element.get_attribute('aria-label').split()[1])
 
         #Write info in file
         f = open("reviews.txt", "a")
         f.write("Name:"+name_user + "\n")
         f.write("Date:"+date+ "\n")
-        f.write("Stars:"+str(numStars)+ "\n")
+        #f.write("Stars:"+str(numStars)+ "\n")
         f.write("Description:"+description+ "\n")
         f.close()
+
+
+
             
 
 
-
 print("Finished")
+    
 
 """
 
