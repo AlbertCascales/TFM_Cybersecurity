@@ -75,6 +75,7 @@ if status_code == 200:
         contador=0
         for star in starts_element:
             contador+=1
+            
         #Write info in file
         f = open("reviews.txt", "a")
         f.write("Name:"+name_user + "\n")
