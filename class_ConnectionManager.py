@@ -72,6 +72,6 @@ class ConnectionManager:
             print ("Waiting to obtain new IP: %s Seconds" % seg)
             self.new_ip = self.request("http://icanhazip.com/").read()
 
-        file_text = open("output.txt", "a")
+        file_text = open("ipDirections.txt", "a")
         file_text.write("IP address: " + str(self.new_ip) + "\n")
         #print ("New connection with IP: %s" % self.new_ip)
