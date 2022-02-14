@@ -64,26 +64,11 @@ if status_code == 200:
         numStars = int(starts_element.get_attribute('aria-label').split()[1])
 
         #Write info in file
-        f = open("reviews.txt", "a")
+        f = open("reviewsPlayStore.txt", "a")
         f.write("Name:"+name_user + "\n")
         f.write("Date:"+date+ "\n")
         f.write("Stars:"+str(numStars)+ "\n")
         f.write("Description:"+description+ "\n")
         f.close()
             
-
-
 print("Finished")
-    
-
-"""
-
-
-    html = BeautifulSoup(req.read(), "html.parser")
-    posts = html.find_all('div', {'jscontroller':'H6eOGe'})
-    file_text = open("output.txt", "a")
-    file_text.write("Accessing:" + URL_TOTAL + "\n")
-    for post in posts:
-        file_text.write(str(post.get_text()) + "\n")
-    
-"""
