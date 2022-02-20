@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 __author__ = 'RicardoMoya'
 
+from anyio import sleep
 from attr import define
 from bs4 import BeautifulSoup
 from class_ConnectionManager import ConnectionManager
@@ -36,6 +37,7 @@ def defineURL(appStoreType, country):
         URL_BASE = "https://play.google.com/store/apps/details?id="
         URL_PACKAGE = "com.gf.flyingmotorbike.policebike.robotshooting&hl=%s&gl=US&showAllReviews=true" %(country)
         URL_TOTAL=URL_BASE+URL_PACKAGE
+        print(URL_TOTAL)
         print("Selecting Play Sotre as App Store")
         return URL_TOTAL
     elif(appStoreType=="Huawei"):
@@ -45,7 +47,7 @@ def defineURL(appStoreType, country):
         print("Selecting Huawei App Gallery as App Store")
         return URL_TOTAL
     else:
-        print("not a valid website")
+        print("Not a valid website")
         exit()
 
 def processComments(link, website, location):
@@ -85,40 +87,94 @@ def processComments(link, website, location):
             date=review.find_element_by_xpath('.//span[@class="p2TkOb"]').text
             #Get description
             description=review.find_element_by_xpath('.//span[@jsname="bN97Pc"]').text
-            #Get number of stars of review
-            #starts_element=review.find_elements_by_xpath('.//div[@class="vQHuPe"]')
-
+            #Get number of stars of review and number of likes
             starts_element=""
             numStars=""
+            likes=""
 
-            if (location=="US" or location=="CA"):
+
+            if (location=="US"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Rated")]')
                 numStars = int(starts_element.get_attribute('aria-label').split()[1])
+
+                upVotes=review.find_element_by_xpath('.//div[contains(@aria-label,"helpful")]').text
+                if (upVotes!=""):
+                    likes=upVotes
+                else:
+                    likes=0
+
             elif (location=="FR"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"étoiles")]')
                 numStars = int(starts_element.get_attribute('aria-label').split()[3])
+
+                upVotes=review.find_element_by_xpath('.//div[contains(@aria-label,"utile")]').text
+                if (upVotes!=""):
+                    likes=upVotes
+                else:
+                    likes=0
+
             elif (location=="ES"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Valoración")]')
                 numStars = int(starts_element.get_attribute('aria-label').split()[1])
+
+                upVotes=review.find_element_by_xpath('.//div[contains(@aria-label,"útil")]').text
+                if (upVotes!=""):
+                    likes=upVotes
+                else:
+                    likes=0
             elif (location=="DE"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Mit")]')
                 numStars = int(starts_element.get_attribute('aria-label').split()[1])
+
+                upVotes=review.find_element_by_xpath('.//div[contains(@aria-label,"wurde")]').text
+                if (upVotes!=""):
+                    likes=upVotes
+                else:
+                    likes=0
+
             elif (location=="NL"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Beoordeeld")]')
                 numStars = int(starts_element.get_attribute('aria-label').split()[2])
+
+                upVotes=review.find_element_by_xpath('.//div[contains(@aria-label,"beoordeeld")]').text
+                if (upVotes!=""):
+                    likes=upVotes
+                else:
+                    likes=0
+
             elif (location=="NO"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Gitt")]')
                 numStars = int(starts_element.get_attribute('aria-label').split()[1])
+
+                upVotes=review.find_element_by_xpath('.//div[contains(@aria-label,"nyttig")]').text
+                if (upVotes!=""):
+                    likes=upVotes
+                else:
+                    likes=0
+
             elif (location=="RO"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Evaluat")]')
                 numStars = int(starts_element.get_attribute('aria-label').split()[2])
+
+                upVotes=review.find_element_by_xpath('.//div[contains(@aria-label,"utilă")]').text
+                if (upVotes!=""):
+                    likes=upVotes
+                else:
+                    likes=0
+                
             elif (location=="TR"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Beş")]')
                 numStars = int(starts_element.get_attribute('aria-label').split()[2])
 
+                upVotes=review.find_element_by_xpath('.//div[contains(@aria-label,"sayısı")]').text
+                if (upVotes!=""):
+                    likes=upVotes
+                else:
+                    likes=0           
+
 
             #Write info in json format
-            reviewsList.append({'author':name_user,'timestamp':date,'numStars':numStars,'review':description})
+            reviewsList.append({'author':name_user,'timestamp':date,'numStars':numStars,'review':description,'likes':likes})
 
             #Write info in json file
         with open("reviewsGooglePlay.json", "w", encoding="utf8") as json_file:
@@ -126,6 +182,9 @@ def processComments(link, website, location):
                 json.dump(rev, json_file, ensure_ascii=False)
     
     elif (website=="Huawei"):
+
+        time.sleep(4)
+
         #Press "View All" button
         #Press "Show more reviews" button
         try:
