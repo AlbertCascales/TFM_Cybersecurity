@@ -35,26 +35,25 @@ def defineURL(appStoreType, country):
     if (appStoreType=="Google"):
         URL_BASE = "https://play.google.com/store/apps/details?id="
         URL_PACKAGE = "com.gf.flyingmotorbike.policebike.robotshooting&hl=%s&gl=US&showAllReviews=true" %(country)
+        URL_TOTAL=URL_BASE+URL_PACKAGE
         print("Selecting Play Sotre as App Store")
-        return URL_PACKAGE
+        return URL_TOTAL
     elif(appStoreType=="Huawei"):
         URL_BASE = "https://appgallery.huawei.com/app/"
         URL_PACKAGE = "C100315379"
+        URL_TOTAL=URL_BASE+URL_PACKAGE
         print("Selecting Huawei App Gallery as App Store")
-        return URL_PACKAGE
+        return URL_TOTAL
     else:
         print("not a valid website")
         exit()
 
-    
-    URL_TOTAL = URL_BASE + URL_PACKAGE
-
-def processComments(link, url):
+def processComments(link, website, location):
     DRIVER_PATH = '/home/alberto/Descargas/chromedriver'
     driver = webdriver.Chrome(executable_path=DRIVER_PATH)
     driver.get(link)
 
-    if (url=="Google"):
+    if ("Google" in website):
         #Get scroll height
         last_height = driver.execute_script("return document.body.scrollHeight")
         while (True):
@@ -87,18 +86,46 @@ def processComments(link, url):
             #Get description
             description=review.find_element_by_xpath('.//span[@jsname="bN97Pc"]').text
             #Get number of stars of review
-            starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Rated")]')
-            numStars = int(starts_element.get_attribute('aria-label').split()[1])
+            #starts_element=review.find_elements_by_xpath('.//div[@class="vQHuPe"]')
+
+            starts_element=""
+            numStars=""
+
+            if (location=="US" or location=="CA"):
+                starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Rated")]')
+                numStars = int(starts_element.get_attribute('aria-label').split()[1])
+            elif (location=="FR"):
+                starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"étoiles")]')
+                numStars = int(starts_element.get_attribute('aria-label').split()[3])
+            elif (location=="ES"):
+                starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Valoración")]')
+                numStars = int(starts_element.get_attribute('aria-label').split()[1])
+            elif (location=="DE"):
+                starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Mit")]')
+                numStars = int(starts_element.get_attribute('aria-label').split()[1])
+            elif (location=="NL"):
+                starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Beoordeeld")]')
+                numStars = int(starts_element.get_attribute('aria-label').split()[2])
+            elif (location=="NO"):
+                starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Gitt")]')
+                numStars = int(starts_element.get_attribute('aria-label').split()[1])
+            elif (location=="RO"):
+                starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Evaluat")]')
+                numStars = int(starts_element.get_attribute('aria-label').split()[2])
+            elif (location=="TR"):
+                starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Beş")]')
+                numStars = int(starts_element.get_attribute('aria-label').split()[2])
+
 
             #Write info in json format
-            reviewsList.append({'author':name_user,'timestamp':date,'numStars':contador,'review':description})
+            reviewsList.append({'author':name_user,'timestamp':date,'numStars':numStars,'review':description})
 
             #Write info in json file
         with open("reviewsGooglePlay.json", "w", encoding="utf8") as json_file:
             for rev in reviewsList:
                 json.dump(rev, json_file, ensure_ascii=False)
     
-    else:
+    elif (website=="Huawei"):
         #Press "View All" button
         #Press "Show more reviews" button
         try:
@@ -164,11 +191,15 @@ def main():
     #Connection to the VPN
     vpnConnection(location)
 
-    #Access to the website and process comments
+    #Get the URL of the website
     url = defineURL(website, location)
 
+    #Process comments of the website
+    processComments(url, website, location)
+
     #stopVPN
-    stopVPN
+    if (location!="ES"):
+        stopVPN()
 
 
 if __name__ == "__main__":
