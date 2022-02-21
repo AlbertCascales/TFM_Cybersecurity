@@ -11,9 +11,12 @@ import time
 from selenium.webdriver.common.by import By
 from itertools import count, islice
 import getopt, sys, os, argparse, json
+from deep_translator import GoogleTranslator
 
-possibleVPN = ["US", "CA", "FR", "DE", "NL", "NO", "RO", "CH", "GB", "TR", "HK"]
+possibleVPN = ["US", "FR", "DE", "NL", "NO", "RO", "TR"]
+supportedLanguajes = ["en", "fr", "de", "nl", "no", "ro", "tr", "es"]
 reviewsList=[]
+translatedComments=[]
 
 def vpnConnection(country):
     location = country
@@ -32,10 +35,10 @@ def vpnConnection(country):
 
 
 
-def defineURL(appStoreType, country):
+def defineURL(appStoreType, country, application):
     if (appStoreType=="Google"):
         URL_BASE = "https://play.google.com/store/apps/details?id="
-        URL_PACKAGE = "com.gf.flyingmotorbike.policebike.robotshooting&hl=%s&gl=US&showAllReviews=true" %(country)
+        URL_PACKAGE = application + "&hl=%s&gl=US&showAllReviews=true" %(country)
         URL_TOTAL=URL_BASE+URL_PACKAGE
         print(URL_TOTAL)
         print("Selecting Play Sotre as App Store")
@@ -65,6 +68,7 @@ def processComments(link, website, location):
             time.sleep(1)
             #Calculate new scroll height
             new_height = driver.execute_script("return document.body.scrollHeight")
+            time.sleep(1)
             #Compare with previous scroll height
             if (new_height == last_height):
                 break
@@ -76,16 +80,19 @@ def processComments(link, website, location):
             except NoSuchElementException:
                 print("No existe")
 
+        #Get name of application
+        applicationName = driver.find_element_by_css_selector(".AHFaub").text
+
         #Get reviews of users
         reviews = driver.find_elements_by_xpath('//div[@jsname="fk8dgd"]/div')
 
         for review in reviews:
-            #print(review.text)
             #Get name of user
             name_user=review.find_element_by_xpath('.//span[@class="X43Kjb"]').text
             #Get date of review
             date=review.find_element_by_xpath('.//span[@class="p2TkOb"]').text
             #Get description
+            translatedComments.clear()
             description=review.find_element_by_xpath('.//span[@jsname="bN97Pc"]').text
             #Get number of stars of review and number of likes
             starts_element=""
@@ -170,16 +177,41 @@ def processComments(link, website, location):
                 if (upVotes!=""):
                     likes=upVotes
                 else:
-                    likes=0           
+                    likes=0
+
+            #Translate description in all possible languajes
+            translatedComments.append(description)
+            for lang in supportedLanguajes:
+                if ((lang =="en" and location =="US") or (lang=="es" and location =="ES") or (lang.isupper() == location )):
+                    pass
+                else:
+                    translatedComments.append(GoogleTranslator(source='auto', target=lang).translate(description))
+            #print(translated)
+
+            for comm in translatedComments:
+                reviewsList.append({'author':name_user,'timestamp':date,'numStars':numStars,'review':comm,'likes':likes})
+
+        #Write info in json file
+        with open("reviewsGooglePlay.json", "a", encoding="utf8") as json_file:
+            if (os.stat("reviewsGooglePlay.json").st_size != 0):
+                json_file.write(",")
+                json_file.write("\n")
 
 
-            #Write info in json format
-            reviewsList.append({'author':name_user,'timestamp':date,'numStars':numStars,'review':description,'likes':likes})
-
-            #Write info in json file
-        with open("reviewsGooglePlay.json", "w", encoding="utf8") as json_file:
+            if (os.stat("reviewsGooglePlay.json").st_size == 0):
+                json_file.write("{")
+                json_file.write("\n")
+            json_file.write('"' + applicationName + '"' + ":" + " [")
+            json_file.write("\n")
             for rev in reviewsList:
                 json.dump(rev, json_file, ensure_ascii=False)
+                if rev != reviewsList[-1]:
+                    json_file.write(",")
+                    json_file.write("\n")
+                else:
+                    json_file.write("\n")
+            json_file.write("]")
+            json_file.write("\n")
     
     elif (website=="Huawei"):
 
@@ -241,20 +273,33 @@ def stopVPN():
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-v', type=str, required=True, help="The letter of the country where the VPN will be connected (US, CA, FR, DE, NL, NO, RO, CH, GB, TR, HK, ES)")
+    parser.add_argument('-v', type=str, required=True, help="The letter of the country where the VPN will be connected (US, FR, DE, NL, NO, RO, TR, ES)")
     parser.add_argument('-s', type=str, required=True, help="The App Store which will be processed (Google, Huawei)")
+
     args = parser.parse_args()
     location = args.v
-    website = args.s                
+    website = args.s              
 
     #Connection to the VPN
     vpnConnection(location)
 
-    #Get the URL of the website
-    url = defineURL(website, location)
+    # read the applications that wants to be processed
+    file1 = open('PlayStoreApplications.txt', 'r')
+    Lines = file1.readlines()
+    
+    count = 0
+    # Strips the newline character
+    for app in Lines:
 
-    #Process comments of the website
-    processComments(url, website, location)
+        #Get the URL of the website
+        url = defineURL(website, location, app)
+
+        #Process comments of the website
+        processComments(url, website, location)
+
+    #Close JSON file
+    with open("reviewsGooglePlay.json", "a", encoding="utf8") as json_file:
+        json_file.write("}")
 
     #stopVPN
     if (location!="ES"):
