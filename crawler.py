@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 __author__ = 'RicardoMoya'
 
+from pickle import UNICODE
 from anyio import sleep
 from attr import define
 from bs4 import BeautifulSoup
+from emoji import UNICODE_EMOJI_ENGLISH
+from sqlalchemy import desc
 from class_ConnectionManager import ConnectionManager
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -12,6 +15,9 @@ from selenium.webdriver.common.by import By
 from itertools import count, islice
 import getopt, sys, os, argparse, json
 from deep_translator import GoogleTranslator
+import  emoji
+from langdetect import detect
+
 
 possibleVPN = ["US", "FR", "DE", "NL", "NO", "RO", "TR"]
 supportedLanguajes = ["en", "fr", "de", "nl", "no", "ro", "tr", "es"]
@@ -180,13 +186,28 @@ def processComments(link, website, location):
                     likes=0
 
             #Translate description in all possible languajes
-            translatedComments.append(description)
-            for lang in supportedLanguajes:
-                if ((lang =="en" and location =="US") or (lang=="es" and location =="ES") or (lang.isupper() == location )):
-                    pass
+            
+            
+            
+            #Check if comment contains emoji
+            newDescription=""
+            for word in description:
+                if word in emoji.UNICODE_EMOJI_ENGLISH:
+                    newDescription += emoji.demojize(word)
+                    print(newDescription)
                 else:
-                    translatedComments.append(GoogleTranslator(source='auto', target=lang).translate(description))
-            #print(translated)
+                    newDescription+=word
+            translatedComments.append(newDescription)
+            
+
+            #Detect languaje
+            lang = detect(newDescription)
+
+            #Translate to the rest of languajes
+            for languaje in supportedLanguajes:
+                if (lang != languaje):
+                    translatedComments.append(GoogleTranslator(source=lang, target=languaje).translate(newDescription))
+
 
             for comm in translatedComments:
                 reviewsList.append({'author':name_user,'timestamp':date,'numStars':numStars,'review':comm,'likes':likes})
@@ -212,6 +233,9 @@ def processComments(link, website, location):
                     json_file.write("\n")
             json_file.write("]")
             json_file.write("\n")
+
+        reviewsList.clear()
+
     
     elif (website=="Huawei"):
 
@@ -290,6 +314,8 @@ def main():
     count = 0
     # Strips the newline character
     for app in Lines:
+
+        translatedComments.clear()
 
         #Get the URL of the website
         url = defineURL(website, location, app)
