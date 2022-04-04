@@ -17,10 +17,19 @@ import getopt, sys, os, argparse, json
 from deep_translator import GoogleTranslator
 import  emoji
 from langdetect import detect
+import datetime
 
 
 possibleVPN = ["US", "FR", "DE", "NL", "NO", "RO", "TR"]
 supportedLanguajes = ["en", "fr", "de", "nl", "no", "ro", "tr", "es"]
+supportedEnglishLanguaje=["en"]
+spanishMonths=["enero", "febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"]
+frenchMonths=["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+deutschMonths=["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]
+nlMonths=["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"]
+noMonths=["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"]
+roMonths=["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"]
+turkishMonths=["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
 reviewsList=[]
 translatedComments=[]
 
@@ -51,7 +60,7 @@ def defineURL(appStoreType, country, application):
         return URL_TOTAL
     elif(appStoreType=="Huawei"):
         URL_BASE = "https://appgallery.huawei.com/app/"
-        URL_PACKAGE = "C100315379"
+        URL_PACKAGE = application
         URL_TOTAL=URL_BASE+URL_PACKAGE
         print("Selecting Huawei App Gallery as App Store")
         return URL_TOTAL
@@ -116,6 +125,8 @@ def processComments(link, website, location):
                 else:
                     likes=0
 
+                date=datetime.datetime.strptime(date, '%B %d, %Y').strftime('%Y-%m-%d')
+
             elif (location=="FR"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"étoiles")]')
                 numStars = int(starts_element.get_attribute('aria-label').split()[3])
@@ -126,6 +137,12 @@ def processComments(link, website, location):
                 else:
                     likes=0
 
+                month = date.split(' ')[1]
+                if month in frenchMonths:
+                    position=frenchMonths.index(month)
+                newDate = date.replace(month, str(position+1))
+                date = datetime.datetime.strptime(newDate, '%d %m %Y').strftime('%Y-%m-%d')
+
             elif (location=="ES"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Valoración")]')
                 numStars = int(starts_element.get_attribute('aria-label').split()[1])
@@ -135,6 +152,14 @@ def processComments(link, website, location):
                     likes=upVotes
                 else:
                     likes=0
+
+                date = date.replace("de ",'')
+                month = date.split(' ')[1]
+                if month in spanishMonths:
+                    position=spanishMonths.index(month)
+                newDate = date.replace(month, str(position+1))
+                date = datetime.datetime.strptime(newDate, '%d %m %Y').strftime('%Y-%m-%d')
+
             elif (location=="DE"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Mit")]')
                 numStars = int(starts_element.get_attribute('aria-label').split()[1])
@@ -144,6 +169,13 @@ def processComments(link, website, location):
                     likes=upVotes
                 else:
                     likes=0
+
+                date = date.replace(".",'')
+                month = date.split(' ')[1]
+                if month in deutschMonths:
+                    position=deutschMonths.index(month)
+                newDate = date.replace(month, str(position+1))
+                date = datetime.datetime.strptime(newDate, '%d %m %Y').strftime('%Y-%m-%d')
 
             elif (location=="NL"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Beoordeeld")]')
@@ -155,6 +187,12 @@ def processComments(link, website, location):
                 else:
                     likes=0
 
+                month = date.split(' ')[1]
+                if month in nlMonths:
+                    position=nlMonths.index(month)
+                newDate = date.replace(month, str(position+1))
+                date = datetime.datetime.strptime(newDate, '%d %m %Y').strftime('%Y-%m-%d')
+
             elif (location=="NO"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Gitt")]')
                 numStars = int(starts_element.get_attribute('aria-label').split()[1])
@@ -165,6 +203,13 @@ def processComments(link, website, location):
                 else:
                     likes=0
 
+                date = date.replace(".",'')
+                month = date.split(' ')[1]
+                if month in noMonths:
+                    position=noMonths.index(month)
+                newDate = date.replace(month, str(position+1))
+                date = datetime.datetime.strptime(newDate, '%d %m %Y').strftime('%Y-%m-%d')
+
             elif (location=="RO"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Evaluat")]')
                 numStars = int(starts_element.get_attribute('aria-label').split()[2])
@@ -174,6 +219,12 @@ def processComments(link, website, location):
                     likes=upVotes
                 else:
                     likes=0
+
+                month = date.split(' ')[1]
+                if month in roMonths:
+                    position=roMonths.index(month)
+                newDate = date.replace(month, str(position+1))
+                date = datetime.datetime.strptime(newDate, '%d %m %Y').strftime('%Y-%m-%d')
                 
             elif (location=="TR"):
                 starts_element=review.find_element_by_xpath('.//div[contains(@aria-label,"Beş")]')
@@ -185,6 +236,12 @@ def processComments(link, website, location):
                 else:
                     likes=0
 
+                month = date.split(' ')[1]
+                if month in turkishMonths:
+                    position=turkishMonths.index(month)
+                newDate = date.replace(month, str(position+1))
+                date = datetime.datetime.strptime(newDate, '%d %m %Y').strftime('%Y-%m-%d')
+
             #Translate description in all possible languajes
             
             
@@ -194,19 +251,24 @@ def processComments(link, website, location):
             for word in description:
                 if word in emoji.UNICODE_EMOJI_ENGLISH:
                     newDescription += emoji.demojize(word)
-                    print(newDescription)
+                    #print(newDescription)
                 else:
                     newDescription+=word
-            translatedComments.append(newDescription)
+            #translatedComments.append(newDescription)
             
 
             #Detect languaje
-            lang = detect(newDescription)
+            try:
+                lang = detect(newDescription)
+            except:
+                lang = "en"
 
             #Translate to the rest of languajes
-            for languaje in supportedLanguajes:
+            for languaje in supportedEnglishLanguaje:
                 if (lang != languaje):
                     translatedComments.append(GoogleTranslator(source=lang, target=languaje).translate(newDescription))
+                else:
+                    translatedComments.append(newDescription)
 
 
             for comm in translatedComments:
@@ -217,7 +279,6 @@ def processComments(link, website, location):
             if (os.stat("reviewsGooglePlay.json").st_size != 0):
                 json_file.write(",")
                 json_file.write("\n")
-
 
             if (os.stat("reviewsGooglePlay.json").st_size == 0):
                 json_file.write("{")
@@ -240,6 +301,13 @@ def processComments(link, website, location):
     elif (website=="Huawei"):
 
         time.sleep(4)
+
+        #Get application name
+        applicationName = driver.find_element_by_xpath('.//div[@data-v-1f82e494=""]').text
+        sep = '\n'
+        applicationName = applicationName.split(sep, 1)[0]
+
+
 
         #Press "View All" button
         #Press "Show more reviews" button
@@ -286,9 +354,35 @@ def processComments(link, website, location):
             reviewsList.append({'author':name_user,'timestamp':date,'numStars':contador,'review':description})
 
         #Write info in json file
+        with open("reviewsHuaweiAppGallery.json", "a", encoding="utf8") as json_file:
+            if (os.stat("reviewsHuaweiAppGallery.json").st_size != 0):
+                json_file.write(",")
+                json_file.write("\n")
+
+            if (os.stat("reviewsHuaweiAppGallery.json").st_size == 0):
+                json_file.write("{")
+                json_file.write("\n")
+            json_file.write('"' + applicationName + '"' + ":" + " [")
+            json_file.write("\n")
+            for rev in reviewsList:
+                json.dump(rev, json_file, ensure_ascii=False)
+                if rev != reviewsList[-1]:
+                    json_file.write(",")
+                    json_file.write("\n")
+                else:
+                    json_file.write("\n")
+            json_file.write("]")
+            json_file.write("\n")
+
+        reviewsList.clear()
+
+        """
+        #Write info in json file
         with open("reviewsHuaweiAppGallery.json", "w", encoding="utf8") as json_file:
             for rev in reviewsList:
                 json.dump(rev, json_file, ensure_ascii=False)
+        """
+        
 
 def stopVPN():
     os.system("windscribe disconnect")
@@ -308,7 +402,11 @@ def main():
     vpnConnection(location)
 
     # read the applications that wants to be processed
-    file1 = open('PlayStoreApplications.txt', 'r')
+    file1=""
+    if (website=="Google"):
+        file1 = open('PlayStoreApplications.txt', 'r')
+    else:
+        file1= open('HuaweiAppGallery.txt', 'r')
     Lines = file1.readlines()
     
     count = 0
@@ -324,8 +422,12 @@ def main():
         processComments(url, website, location)
 
     #Close JSON file
-    with open("reviewsGooglePlay.json", "a", encoding="utf8") as json_file:
-        json_file.write("}")
+    if (website=="Google"):
+        with open("reviewsGooglePlay.json", "a", encoding="utf8") as json_file:
+            json_file.write("}")
+    else:
+        with open("reviewsHuaweiAppGallery.json", "a", encoding="utf8") as json_file:
+            json_file.write("}")
 
     #stopVPN
     if (location!="ES"):
