@@ -1,9 +1,10 @@
 #word mover distance
+from cgitb import text
 import logging
 
 from numpy import vectorize
 from torch import combinations
-logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.ERROR)
 from nltk.corpus import stopwords
 from nltk import download
 import gensim.downloader as api
@@ -13,7 +14,7 @@ import string
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
 from nltk.corpus import stopwords
-stop_words = set(stopwords.words("english"))
+#stop_words = set(stopwords.words("english"))
 
 #bert cosine similarity
 import pandas as pd
@@ -31,27 +32,54 @@ import numpy as np
 import json
 import itertools
 
+#Read json file
+import sys
+
+def write_into_file(app1Name, app1Country, app1Author, app1Timestamp, app1Comment, app2Name, app2Country, app2Author, app2Timestamp, app2Comment):
+    #open text file
+    text_file = open("similar_reviews.txt", "a")
+    
+    #write string to file
+    text_file.write("Application " + app1Name + " from " + app1Country + " with autor " + app1Author + " and date " + app1Timestamp + " and comment " + app1Comment + " is similar to " + " Application " + app2Name + " from " + app2Country + " with autor " + app2Author + " and date " + app2Timestamp + " and comment " + app2Comment)
+    text_file.write('\n')
+    #close file
+    text_file.close()
 
 def preprocess_word_mover_distance(sentence, stop_words):
     return [w for w in sentence.lower().split() if w not in stop_words]
 
 #Word embedings (bag of words) + word mover distance
-def word_mover_distance(lista):
+#Two identical sentences, have a value of 0
+#Two completly different sentences have a value of 1.4 max
+#1.1 could be a good value
+def word_mover_distance(dictionary):
 
     download('stopwords')  # Download stopwords list.
     stop_words = stopwords.words('english')
+    model = api.load('word2vec-google-news-300')
+    model.init_sims(replace=True)
 
-    for comment1, comment2 in itertools.combinations(lista, 2):
+    for i in range(len(dictionary)):
+        for j in range(i+1, len(dictionary)):
+        
+            comment1=dictionary[i]['review']
+            comment2=dictionary[j]['review']
 
-        #sentence_obama = 'Obama speaks to the media in Illinois'
-        #sentence_president = 'The president greets the press in Chicago'
+            first_sentence = preprocess_word_mover_distance(comment1, stop_words)
+            second_sentence = preprocess_word_mover_distance(comment2, stop_words)
 
-        first_sentence = preprocess_word_mover_distance(comment1, stop_words)
-        second_sentence = preprocess_word_mover_distance(comment2, stop_words)
-
-        model = api.load('word2vec-google-news-300')
-        distance = model.wmdistance(first_sentence, second_sentence)
-        print('The distance between', first_sentence, " and ", second_sentence, 'is', distance)
+            distance = model.wmdistance(first_sentence, second_sentence)
+            if (distance<=1.1):
+                application1_name=dictionary[i]['application']
+                application1_country=dictionary[i]['country']
+                application1_author=dictionary[i]['author']
+                application1_timestamp=dictionary[i]['timestamp']
+                application2_name=dictionary[i]['application']
+                application2_country=dictionary[i]['country']
+                application2_author=dictionary[i]['author']
+                application2_timestamp=dictionary[i]['timestamp']
+                write_into_file(application1_name, application1_country, application1_author, application1_timestamp, comment1, application2_name, application2_country, application2_author, application2_timestamp, comment2)
+            #print('The distance between', first_sentence, " and ", second_sentence, 'is', distance)
 
 def preporcess_cosine_similarity(text):
     text = ''.join([word for word in text if word not in string.punctuation])
@@ -137,7 +165,7 @@ def word_embedding_universal_sentence_encoder():
 
 def cosine(u, v):
     return np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
-
+"""
 def obtain_comments():
     allComments=[]
     with open('reviewsHuaweiAppGallery.json') as a:
@@ -146,12 +174,23 @@ def obtain_comments():
             allComments.append(rev['review'])
 
     return allComments
+"""
+
 
 
 
 if __name__ == "__main__":
-    list_comments = obtain_comments()
-    word_mover_distance(list_comments)
+    #Read json file
+    allComments =[]
+    with open(sys.argv[1], "r") as json_file:
+        json_object = json.load(json_file)
+        for rev in json_object:
+            #Save comments as list
+            allComments.append(rev)
+
+    #print(allComments[0]['review'])
+
+    word_mover_distance(allComments)
     #bag_of_words_consine_similarity()
     #bert_cosine_similarity()
     #word_embedding_universal_sentence_encoder()
