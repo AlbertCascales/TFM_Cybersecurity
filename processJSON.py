@@ -36,12 +36,12 @@ import itertools
 #Read json file
 import sys
 
-def write_into_file(app1Name, app1Country, app1Author, app1Timestamp, app1Comment, app2Name, app2Country, app2Author, app2Timestamp, app2Comment):
+def write_into_file(storeApp1, app1Name, app1Country, app1Author, app1Timestamp, app1Comment, storeApp2, app2Name, app2Country, app2Author, app2Timestamp, app2Comment):
     #open text file
     text_file = open("similar_reviews.txt", "a")
     
     #write string to file
-    text_file.write("Application " + app1Name + " from " + app1Country + " with autor " + app1Author + " and date " + app1Timestamp + " and comment '" + app1Comment + "' is similar to " + "Application " + app2Name + " from " + app2Country + " with autor " + app2Author + " and date " + app2Timestamp + " and comment '" + app2Comment + "'")
+    text_file.write("From store:" + storeApp1 + " the application " + app1Name + " from " + app1Country + " with autor " + app1Author + " and date " + app1Timestamp + " and comment '" + app1Comment + "' is similar to " + "from store" + storeApp2 +  " from application " + app2Name + " from " + app2Country + " with autor " + app2Author + " and date " + app2Timestamp + " and comment '" + app2Comment + "'")
     text_file.write('\n')
     #close file
     text_file.close()
@@ -71,16 +71,18 @@ def word_mover_distance(dictionary):
 
             distance = model.wmdistance(first_sentence, second_sentence)
             if (distance<=1.1):
+                application1_store=dictionary[i]['store']
                 application1_name=dictionary[i]['application']
                 application1_country=dictionary[i]['country']
                 application1_author=dictionary[i]['author']
                 application1_timestamp=dictionary[i]['timestamp']
 
+                application2_store=dictionary[j]['store']
                 application2_name=dictionary[j]['application']
                 application2_country=dictionary[j]['country']
                 application2_author=dictionary[j]['author']
                 application2_timestamp=dictionary[j]['timestamp']
-                write_into_file(application1_name, application1_country, application1_author, application1_timestamp, comment1, application2_name, application2_country, application2_author, application2_timestamp, comment2)
+                write_into_file(application1_store, application1_name, application1_country, application1_author, application1_timestamp, comment1,application2_store, application2_name, application2_country, application2_author, application2_timestamp, comment2)
             #print('The distance between', first_sentence, " and ", second_sentence, 'is', distance)
 
 def preporcess_cosine_similarity(text):
@@ -123,16 +125,18 @@ def bag_of_words_consine_similarity(dictionary):
 
             csim = cosine_sim_vectors(vectors[i], vectors[j])
             if (csim>0.1):
+                application1_store=dictionary[i]['store']
                 application1_name=dictionary[i]['application']
                 application1_country=dictionary[i]['country']
                 application1_author=dictionary[i]['author']
                 application1_timestamp=dictionary[i]['timestamp']
 
+                application2_store=dictionary[j]['store']
                 application2_name=dictionary[j]['application']
                 application2_country=dictionary[j]['country']
                 application2_author=dictionary[j]['author']
                 application2_timestamp=dictionary[j]['timestamp']
-                write_into_file(application1_name, application1_country, application1_author, application1_timestamp, comments_to_list[i], application2_name, application2_country, application2_author, application2_timestamp, comments_to_list[j])
+                write_into_file(application1_store, application1_name, application1_country, application1_author, application1_timestamp, comments_to_list[i], application2_store, application2_name, application2_country, application2_author, application2_timestamp, comments_to_list[j])
             
 def most_similar(doc_id,similarity_matrix,matrix,documents_df):
     print (f'Document: {documents_df.iloc[doc_id]["documents"]}')
@@ -192,37 +196,55 @@ def bert_cosine_similarity(dictionary):
                 print(elemento_analizado)
                 
                 if (elemento>0.5):
+                    application1_store=dictionary[linea]['store']
                     application1_name=dictionary[linea]['application']
                     application1_country=dictionary[linea]['country']
                     application1_author=dictionary[linea]['author']
                     application1_timestamp=dictionary[linea]['timestamp']
+
+                    application2_store=dictionary[elemento_analizado]['store']
                     application2_name=dictionary[elemento_analizado]['application']
                     application2_country=dictionary[elemento_analizado]['country']
                     application2_author=dictionary[elemento_analizado]['author']
                     application2_timestamp=dictionary[elemento_analizado]['timestamp']
-                    write_into_file(application1_name, application1_country, application1_author, application1_timestamp, comments_to_list[linea], application2_name, application2_country, application2_author, application2_timestamp, comments_to_list[elemento_analizado])
+                    write_into_file(application1_store, application1_name, application1_country, application1_author, application1_timestamp, comments_to_list[linea], application2_store, application2_name, application2_country, application2_author, application2_timestamp, comments_to_list[elemento_analizado])
                 
         #most_similar(0,pairwise_similarities,'Cosine Similarity')
 
-
-def word_embedding_universal_sentence_encoder():
+#Vale -1 si no se parecen nada, y 1 si son idénticos
+#0.3 puede ser un buen valor
+def word_embedding_universal_sentence_encoder(dictionary):
     module_url = "https://tfhub.dev/google/universal-sentence-encoder/4" 
     model = hub.load(module_url)
     print ("module %s loaded" % module_url)
 
-    sentences = ["I went to eat to an italian restaurant.", 
-       "We had a three-course meal.", 
-       "Brad came to dinner with us.",
-       "He loves fish tacos.",
-       "In the end, we all felt like we ate too much.",
-       "We all agreed; it was a magnificent evening."]
+    for i in range(len(dictionary)):
+        for j in range(i+1, len(dictionary)):
+        
+            comment1=dictionary[i]['review']
+            comment2=dictionary[j]['review']
+        
+            #query = "I had pizza and pasta."
+            reference = model([comment1])[0]
+            comparation=model([comment2])[0]
 
-    query = "I had pizza and pasta."
-    query_vec = model([query])[0]
+            #for sent in sentences:
+            sim = cosine(reference, comparation)
+            if (sim>0.3):
+                application1_store=dictionary[i]['store']
+                application1_name=dictionary[i]['application']
+                application1_country=dictionary[i]['country']
+                application1_author=dictionary[i]['author']
+                application1_timestamp=dictionary[i]['timestamp']
 
-    for sent in sentences:
-        sim = cosine(query_vec, model([sent])[0])
-        print(query, "and", sent, "has a similarity of:", sim)
+                application2_store=dictionary[j]['store']
+                application2_name=dictionary[j]['application']
+                application2_country=dictionary[j]['country']
+                application2_author=dictionary[j]['author']
+                application2_timestamp=dictionary[j]['timestamp']
+                write_into_file(application1_store, application1_name, application1_country, application1_author, application1_timestamp, comment1, application2_store, application2_name, application2_country, application2_author, application2_timestamp, comment2)
+            
+            #print(comment1, "and", comment2, "has a similarity of:", sim)
 
 def cosine(u, v):
     return np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
@@ -251,7 +273,7 @@ if __name__ == "__main__":
 
     #print(allComments[0]['review'])
 
-    word_mover_distance(allComments)
+    #word_mover_distance(allComments)
     #bag_of_words_consine_similarity(allComments)
     #bert_cosine_similarity(allComments)
-    #word_embedding_universal_sentence_encoder()
+    word_embedding_universal_sentence_encoder(allComments)
