@@ -7,7 +7,6 @@ from attr import define
 from bs4 import BeautifulSoup
 from emoji import UNICODE_EMOJI_ENGLISH
 from sqlalchemy import desc
-from class_ConnectionManager import ConnectionManager
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 import time
@@ -30,8 +29,10 @@ nlMonths=["januari", "februari", "maart", "april", "mei", "juni", "juli", "augus
 noMonths=["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"]
 roMonths=["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"]
 turkishMonths=["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+playStores=["Huawei", "Google"]
 reviewsList=[]
 translatedComments=[]
+allComents=[]
 
 def vpnConnection(country):
     location = country
@@ -102,6 +103,7 @@ def processComments(link, website, location):
         reviews = driver.find_elements_by_xpath('//div[@jsname="fk8dgd"]/div')
 
         for review in reviews:
+            print("entra")
             #Get name of user
             name_user=review.find_element_by_xpath('.//span[@class="X43Kjb"]').text
             #Get date of review
@@ -272,13 +274,14 @@ def processComments(link, website, location):
 
 
             for comm in translatedComments:
-                reviewsList.append({'application':applicationName, 'country':location, 'author':name_user,'timestamp':date,'numStars':numStars,'review':comm,'likes':likes})
+                objeto={'store':website, 'application':applicationName, 'country':location, 'author':name_user, 'timestamp':date, 'numStars':numStars, 'review':comm, 'likes':likes}
+                reviewsList.append(objeto)
+            #print(reviewsList)
 
+        return reviewsList
 
         with open('reviewsGooglePlay.json', 'w', encoding='utf-8') as f:
             json.dump(reviewsList, f, ensure_ascii=False, indent=4)
-
-        #reviewsList.clear()
 
     
     elif (website=="Huawei"):
@@ -359,13 +362,20 @@ def processComments(link, website, location):
                 
             #Write info in json format
             for comm in translatedComments:
-                reviewsList.append({'application':applicationName, 'country':location, 'author':name_user,'timestamp':date,'numStars':contador,'review':comm})
+                objeto={'store':website,'application':applicationName, 'country':location, 'author':name_user, 'timestamp':date, 'numStars':contador, 'review':comm}
+                reviewsList.append(objeto)
+            
+            #print(reviewsList)
+            
+
+        return reviewsList
 
         with open('reviewsHuaweiAppGallery.json', 'w', encoding='utf-8') as f:
             json.dump(reviewsList, f, ensure_ascii=False, indent=4)
 
-        #reviewsList.clear()
         
+def clear_reviewList():
+    reviewsList.clear()   
 
 def stopVPN():
     os.system("windscribe disconnect")
@@ -375,41 +385,53 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', nargs='+', required=True, help="The letter of the country where the VPN will be connected (US, FR, DE, NL, NO, RO, TR, ES)")
-    parser.add_argument('-s', type=str, required=True, help="The App Store which will be processed (Google, Huawei)")
+    #parser.add_argument('-s', type=str, required=True, help="The App Store which will be processed (Google, Huawei)")
 
     args = parser.parse_args()
     location = args.v
-    website = args.s
+    #website = args.s
 
-    for country in location: 
+    for country in location:
 
         #Connection to the VPN
         vpnConnection(country)
 
         # read the applications that wants to be processed
         file1=""
-        if (website=="Google"):
-            file1 = open('PlayStoreApplications.txt', 'r')
-        else:
-            file1= open('HuaweiAppGallery.txt', 'r')
-        Lines = file1.readlines()
-        
-        count = 0
-        # Strips the newline character
-        for app in Lines:
+        for web in playStores:
+            if (web=="Google"):
+                file1 = open('PlayStoreApplications.txt', 'r')
+            else:
+                file1= open('HuaweiAppGallery.txt', 'r')
+            Lines = file1.readlines()
+            
+            count = 0
+            if (web=="Huawei" and country=="US"):
+                print("Not processing US with Huawei")
+            else:
+                # Strips the newline character
+                for app in Lines:
 
-            translatedComments.clear()
+                    #Get the URL of the website
+                    url = defineURL(web, country, app)
 
-            #Get the URL of the website
-            url = defineURL(website, country, app)
+                    #Process comments of the website
+                    result = processComments(url, web, country)
+                    if (result!=[]):
+                        for key in result:
+                            if key not in allComents:
+                                #print(key)
+                                allComents.append(key)
+                    #print(allComents)
 
-            #Process comments of the website
-            processComments(url, website, country)
 
         #stopVPN
         if (country!="ES"):
             stopVPN()
 
+
+    with open('reviews.json', 'w', encoding='utf-8') as f:
+        json.dump(allComents, f, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
     main()
