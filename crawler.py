@@ -103,7 +103,6 @@ def processComments(link, website, location):
         reviews = driver.find_elements_by_xpath('//div[@jsname="fk8dgd"]/div')
 
         for review in reviews:
-            print("entra")
             #Get name of user
             name_user=review.find_element_by_xpath('.//span[@class="X43Kjb"]').text
             #Get date of review
@@ -247,7 +246,7 @@ def processComments(link, website, location):
             #Translate description in all possible languajes
             
             
-            
+            """
             #Check if comment contains emoji
             newDescription=""
             for word in description:
@@ -277,6 +276,11 @@ def processComments(link, website, location):
                 objeto={'store':website, 'application':applicationName, 'country':location, 'author':name_user, 'timestamp':date, 'numStars':numStars, 'review':comm, 'likes':likes}
                 reviewsList.append(objeto)
             #print(reviewsList)
+            """
+
+            objeto={'store':website, 'application':applicationName, 'country':location, 'author':name_user, 'timestamp':date, 'numStars':numStars, 'review':description, 'likes':likes}
+            reviewsList.append(objeto)
+
 
         return reviewsList
 
@@ -289,7 +293,7 @@ def processComments(link, website, location):
         time.sleep(4)
 
         #Get application name
-        applicationName = driver.find_element_by_xpath('.//div[@data-v-1f82e494=""]').text
+        applicationName = driver.find_element_by_xpath('.//div[@data-v-7b92aeec=""]').text
         applicationName = applicationName.split('\n', 1)[0]
 
         #Press "View All" button
@@ -339,6 +343,7 @@ def processComments(link, website, location):
             date=datetime.datetime.strptime(date, '%m/%d/%Y').strftime('%Y-%m-%d')
 
 
+            """
             #Check if comment contains emoji
             newDescription=""
             for word in description:
@@ -364,6 +369,9 @@ def processComments(link, website, location):
             for comm in translatedComments:
                 objeto={'store':website,'application':applicationName, 'country':location, 'author':name_user, 'timestamp':date, 'numStars':contador, 'review':comm}
                 reviewsList.append(objeto)
+            """
+            objeto={'store':website,'application':applicationName, 'country':location, 'author':name_user, 'timestamp':date, 'numStars':contador, 'review':description}
+            reviewsList.append(objeto)
             
             #print(reviewsList)
             
@@ -373,9 +381,46 @@ def processComments(link, website, location):
         with open('reviewsHuaweiAppGallery.json', 'w', encoding='utf-8') as f:
             json.dump(reviewsList, f, ensure_ascii=False, indent=4)
 
-        
-def clear_reviewList():
-    reviewsList.clear()   
+def translate_comments():
+    reviewsList.clear()
+    with open("reviews.json", "r") as json_file:
+        json_object = json.load(json_file)
+        for rev in json_object:
+
+            #Check if comment contains emoji
+            newDescription=""
+            for word in rev['review']:
+                if word in emoji.UNICODE_EMOJI_ENGLISH:
+                    newDescription += emoji.demojize(word)
+                else:
+                    newDescription+=word
+
+            #Detect languaje
+            try:
+                lang = detect(newDescription)
+            except:
+                lang = "en"
+
+            #Translate to the rest of languajes
+            for languaje in supportedEnglishLanguaje:
+                if (lang != languaje):
+                    translatedComments.append(GoogleTranslator(source=lang, target=languaje).translate(newDescription))
+                else:
+                    translatedComments.append(newDescription)
+                
+            #Write info in json format
+            for comm in translatedComments:
+                if (rev['store']=="Google"):
+                    objeto={'store':rev['store'], 'application':rev['application'], 'country':rev['country'], 'author':rev['author'], 'timestamp':rev['timestamp'], 'numStars':rev['numStars'], 'review':comm, 'likes':rev['likes']}
+                else:
+                    objeto={'store':rev['store'],'application':rev['application'], 'country':rev['country'], 'author':rev['author'], 'timestamp':rev['timestamp'], 'numStars':rev['numStars'], 'review':comm}
+
+            reviewsList.append(objeto)
+
+    with open('translated_reviews.json', 'w', encoding='utf-8') as f:
+        json.dump(reviewsList, f, ensure_ascii=False, indent=4)
+
+
 
 def stopVPN():
     os.system("windscribe disconnect")
@@ -429,9 +474,12 @@ def main():
         if (country!="ES"):
             stopVPN()
 
-
+    
     with open('reviews.json', 'w', encoding='utf-8') as f:
         json.dump(allComents, f, ensure_ascii=False, indent=4)
+    
+    translate_comments()
+
 
 if __name__ == "__main__":
     main()
