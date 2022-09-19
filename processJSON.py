@@ -374,8 +374,8 @@ if __name__ == "__main__":
 
     #word_mover_distance(allComments)
     #print("segundo")
-    bag_of_words_consine_similarity(allComments)
+    #bag_of_words_consine_similarity(allComments)
     #print("tercero")
-    #bert_cosine_similarity(allComments)
+    bert_cosine_similarity(allComments)
     #print("terminado")
     #word_embedding_universal_sentence_encoder(allComments)

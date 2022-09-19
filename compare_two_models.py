@@ -32,7 +32,7 @@ def convertir_csv_to_json():
 
 def write_into_file(array):
 
-    with open('same_reviews_three_models.json', 'a', encoding='utf-8') as f:
+    with open('same_reviews_two_models.json', 'a', encoding='utf-8') as f:
         json.dump(array, f, ensure_ascii=False, indent=4)
 
     listSameReviews.clear()
