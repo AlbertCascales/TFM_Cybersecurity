@@ -1,0 +1,34 @@
+[
+    {
+        "Technique": "bert_cosine_similarity",
+        "Store1": "Google",
+        "Name1": "Crypto.com - Compre BTC, ETH",
+        "Country1": "ES",
+        "Author1": "Pablete Espinoza",
+        "Date1": "2022-02-07",
+        "Comment1": "I got money invested through this app. I can't get in, it's just frozen in the start and don't let me in . If you could help me to get my money back of let me in to keep investing I would appreciate it. :folded_hands: Thanks",
+        "Store2": "Google",
+        "Name2": "Bitpanda: Compra Bitcoin",
+        "Country2": "ES",
+        "Author2": "Nazareth Rojas Ochoa",
+        "Date2": "2022-03-09",
+        "Comment2": "You are scammers, I try to get my money to send it to me by transfer and it won't let me, I have already tried everything and I can't get my money, the help you give is terrible, I WANT MY MONEY NOW!",
+        "Similarity": "[0.50917508]"
+    },
+    {
+        "Technique": "bert_cosine_similarity",
+        "Store1": "Google",
+        "Name1": "Crypto.com Exchange",
+        "Country1": "ES",
+        "Author1": "Jose Antonio Peral Soler",
+        "Date1": "2021-12-23",
+        "Comment1": "The app says that there is a new update, but the play store does not give an option to update.... Again rush and errors when deploying updates.... What a fudge.",
+        "Store2": "Google",
+        "Name2": "BlockFi: Buy and trade crypto",
+        "Country2": "ES",
+        "Author2": "Enrique Romero",
+        "Date2": "2022-01-22",
+        "Comment2": "The app says to update, but it does not appear that there is a new version in the play store",
+        "Similarity": "[0.61871843]"
+    }
+]
